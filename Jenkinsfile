@@ -14,7 +14,7 @@ void setBuildStatus(String message, String state) {
 pipeline {
     agent any
     environment {
-        DOCKER_HUB_CREDENTIALS = 'DOCKERHUB'
+        DOCKER_HUB_CREDENTIALS = 'DOCKERHUB-1'
         DOCKER_IMAGE_NAME = 'mateuszkurowski/p.y.t.a'
     }
     stages {
@@ -55,35 +55,35 @@ pipeline {
             }
         }
 
-        stage('Frontend') {
-            agent { dockerfile { dir 'frontend' } }
-            steps {
-                script {
-                    setBuildStatus("Building frontend...", "PENDING")
-                }
-                dir('frontend') {
-                    sh 'bun install'
-                    sh 'chmod -R +x ./node_modules/.bin'
-                    sh 'bun run build'
-                }
-                script {
-                    setBuildStatus("Frontend build successful", "SUCCESS")
-                }
-            }
-        }
+        // stage('Frontend') {
+        //     agent { dockerfile { dir 'frontend' } }
+        //     steps {
+        //         script {
+        //             setBuildStatus("Building frontend...", "PENDING")
+        //         }
+        //         dir('frontend') {
+        //             sh 'bun install'
+        //             sh 'chmod -R +x ./node_modules/.bin'
+        //             sh 'bun run build'
+        //         }
+        //         script {
+        //             setBuildStatus("Frontend build successful", "SUCCESS")
+        //         }
+        //     }
+        // }
 
-        stage('Build frontend image') {
-            agent { dockerfile { dir 'frontend' } }
-            steps {
-                script {
-                    setBuildStatus("Building frontend docker image...", "PENDING")
-                }
-                sh 'docker build -t ${DOCKER_IMAGE_NAME}/frontend ./frontend'
-                script {
-                    setBuildStatus("Frontend docker image built successfully", "SUCCESS")
-                }
-            }
-        }
+        // stage('Build frontend image') {
+        //     agent { dockerfile { dir 'frontend' } }
+        //     steps {
+        //         script {
+        //             setBuildStatus("Building frontend docker image...", "PENDING")
+        //         }
+        //         sh 'docker build -t ${DOCKER_IMAGE_NAME}/frontend ./frontend'
+        //         script {
+        //             setBuildStatus("Frontend docker image built successfully", "SUCCESS")
+        //         }
+        //     }
+        // }
     }
 
     post {
