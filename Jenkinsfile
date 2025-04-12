@@ -12,19 +12,18 @@ void setBuildStatus(String message, String state) {
 }
 
 pipeline {
-    agent {
-        docker { image 'python:3.12' }
-    }
     stages {
         stage('Clone') {
             steps {
                 checkout scm
             }
         }
-        stage('Test') {
+
+        stage('Backend') {
+            agent { docker { image 'python:3.12' } }
             steps {
                 script {
-                    setBuildStatus("Running tests...", "PENDING")
+                    setBuildStatus("Running backend tests...", "PENDING")
                 }
                 sh 'pip install poetry'
                 sh 'poetry --directory ./backend install --no-root'
@@ -32,22 +31,34 @@ pipeline {
                 sh 'poetry --directory ./backend run coverage report --fail-under=100'
             }
         }
-    }
-    post {
-        always {
-            echo "====++++always++++===="
+
+        stage('Frontend') {
+            agent { docker { image 'oven/bun:1.2.3' } }
+            steps {
+                script {
+                    setBuildStatus("Building frontend...", "PENDING")
+                }
+                dir('frontend') {
+                    sh 'bun install'
+                    sh 'bun run build'
+                }
+                script {
+                    setBuildStatus("Frontend build successful", "SUCCESS")
+                }
+            }
         }
+    }
+
+    post {
         success {
             script {
                 setBuildStatus("Build succeeded", "SUCCESS")
             }
-            echo "====++++only when successful++++===="
         }
         failure {
             script {
                 setBuildStatus("Build failed", "FAILURE")
             }
-            echo "====++++only when failed++++===="
         }
     }
 }
