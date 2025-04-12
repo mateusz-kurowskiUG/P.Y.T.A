@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        docker { image 'node:latest' }
+        docker { image 'python:3.12' }
     }
     stages {
         stage('Clone') {
@@ -10,7 +10,10 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh 'node --version'
+                sh 'pip install poetry'
+                sh 'poetry --directory ./backend install --no-root'
+                sh 'poetry --directory ./backend run coverage run -m pytest'
+                sh 'poetry --directory ./backend run coverage report --fail-under=100'
             }
         }
     }
