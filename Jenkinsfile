@@ -13,6 +13,10 @@ void setBuildStatus(String message, String state) {
 
 pipeline {
     agent any
+    environment {
+        DOCKER_HUB_CREDENTIALS = 'DOCKERHUB'
+        DOCKER_IMAGE_NAME = 'push mateuszkurowski/p.y.t.a'
+    }
     stages {
         stage('Clone') {
             steps {
@@ -20,7 +24,7 @@ pipeline {
             }
         }
 
-        stage('Backend') {
+        stage('Test backend') {
             agent { docker { image 'python:3.12' } }
             steps {
                 script {
@@ -33,8 +37,38 @@ pipeline {
             }
         }
 
+        stage('Build backend') {
+            agent { docker { image 'python:3.12' } }
+            steps {
+                script {
+                    setBuildStatus("Building backend docker image...", "PENDING")
+                }
+                sh 'docker build -t ${DOCKER_IMAGE_NAME}/backend ./backend'
+                script {
+                    setBuildStatus("Backend docker image built successfully", "SUCCESS")
+                }
+            }
+        }
+
+        stage('Push backend image') {
+            steps {
+                script {
+                    setBuildStatus("Pushing backend docker image...", "PENDING")
+                }
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh """
+                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                    docker push ${DOCKER_IMAGE_NAME}/backend
+                    """
+                }
+                script {
+                    setBuildStatus("Backend docker image pushed successfully", "SUCCESS")
+                }
+            }
+        }
+
         stage('Frontend') {
-            agent { docker { image 'oven/bun:1.2.3' } }
+            agent { dockerfile { dir 'frontend' } }
             steps {
                 script {
                     setBuildStatus("Building frontend...", "PENDING")
@@ -46,6 +80,36 @@ pipeline {
                 }
                 script {
                     setBuildStatus("Frontend build successful", "SUCCESS")
+                }
+            }
+        }
+
+        stage('Build frontend image') {
+            agent { dockerfile { dir 'frontend' } }
+            steps {
+                script {
+                    setBuildStatus("Building frontend docker image...", "PENDING")
+                }
+                sh 'docker build -t ${DOCKER_IMAGE_NAME}/frontend ./frontend'
+                script {
+                    setBuildStatus("Frontend docker image built successfully", "SUCCESS")
+                }
+            }
+        }
+
+        stage('Push frontend image') {
+            steps {
+                script {
+                    setBuildStatus("Pushing frontend docker image...", "PENDING")
+                }
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDENTIALS}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh """
+                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                    docker push ${DOCKER_IMAGE_NAME}/frontend
+                    """
+                }
+                script {
+                    setBuildStatus("Frontend docker image pushed successfully", "SUCCESS")
                 }
             }
         }
