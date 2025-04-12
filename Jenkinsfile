@@ -12,6 +12,7 @@ void setBuildStatus(String message, String state) {
 }
 
 pipeline {
+    agent none
     stages {
         stage('Clone') {
             steps {
