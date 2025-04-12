@@ -55,35 +55,20 @@ pipeline {
             }
         }
 
-        // stage('Frontend') {
-        //     agent { dockerfile { dir 'frontend' } }
-        //     steps {
-        //         script {
-        //             setBuildStatus("Building frontend...", "PENDING")
-        //         }
-        //         dir('frontend') {
-        //             sh 'bun install'
-        //             sh 'chmod -R +x ./node_modules/.bin'
-        //             sh 'bun run build'
-        //         }
-        //         script {
-        //             setBuildStatus("Frontend build successful", "SUCCESS")
-        //         }
-        //     }
-        // }
-
-        // stage('Build frontend image') {
-        //     agent { dockerfile { dir 'frontend' } }
-        //     steps {
-        //         script {
-        //             setBuildStatus("Building frontend docker image...", "PENDING")
-        //         }
-        //         sh 'docker build -t ${DOCKER_IMAGE_NAME}/frontend ./frontend'
-        //         script {
-        //             setBuildStatus("Frontend docker image built successfully", "SUCCESS")
-        //         }
-        //     }
-        // }
+        stage('Build frontend image') {
+            agent any
+            steps {
+                script {
+                    setBuildStatus("Building frontend docker image...", "PENDING")
+                    def frontend_docker_image = docker.build("${DOCKER_IMAGE_NAME}-frontend", "./frontend")
+                    
+                    docker.withRegistry('https://registry.hub.docker.com', DOCKER_HUB_CREDENTIALS) {
+                        frontend_docker_image.push('latest')
+                    }
+                    setBuildStatus("Frontend docker image pushed successfully", "SUCCESS")
+                }
+            }
+        }
     }
 
     post {
