@@ -41,6 +41,7 @@ pipeline {
                 }
                 dir('frontend') {
                     sh 'bun install'
+                    sh 'chmod -R +x ./node_modules/.bin'
                     sh 'bun run build'
                 }
                 script {
